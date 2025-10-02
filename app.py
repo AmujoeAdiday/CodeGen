@@ -20,64 +20,55 @@ with colRight:
     last_friday = st.text_input("Updated Last Friday Cell (with $)", value="", placeholder="e.g. AX$24")
     full_truck = st.text_input("# Weeks Full Truck Cell (with $)", value="", placeholder="e.g. AT$22")
 
-def excel_col_to_num(col_str: str) -> int:
+def col_letter_to_index(col):
     num = 0
-    for c in col_str:
-        if c.isalpha():
-            num = num * 26 + (ord(c.upper()) - ord('A')) + 1
+    for c in col.upper():
+        num = num*26 + (ord(c) - ord('A') + 1)
     return num
 
-def get_col_and_row(cell_ref):
-    m = re.match(r"(\$?)([A-Za-z]+)(\$?)(\d+)", cell_ref)
-    if not m:
-        return None, None
-    return m.group(2).replace('$',''), m.group(4)
+def get_col(cell_ref):
+    m = re.match(r"\$?([A-Za-z]+)", cell_ref)
+    return m.group(1) if m else None
 
-last_friday_col, _ = get_col_and_row(last_friday)
-full_truck_col, full_truck_row = get_col_and_row(full_truck)
-max_col_limit = excel_col_to_num("AN")
+if st.button("Generate Formula"):
+    bm_value_lower = best_model.strip().lower()
+    ma_models = ["12 wk ma", "8 wk ma", "4 wk ma"]
 
-try:
-    full_truck_val = int(full_truck_row)
-except:
-    full_truck_val = None
-
-generate_col1, generate_col2, generate_col3 = st.columns([1,1,1])
-if generate_col2.button("Generate Formula"):
-    check_best_model = best_model.strip().lower()
-    if ("wk ma" not in check_best_model) and ("promo" not in check_best_model):
-        # Output INDIRECT formula to fetch dynamic value at best_model cell
-        formula = f'=INDIRECT("{best_model}")'
+    if not any(model == bm_value_lower for model in ma_models) and ("promo" not in bm_value_lower):
+        # Output the cell reference itself as formula
+        formula = f'={best_model}'
     else:
-        if last_friday_col is None or full_truck_val is None:
-            formula = '"Error: Invalid cell references for last friday or weeks full truck"'
+        last_friday_col = get_col(last_friday)
+        full_truck_num = int(re.search(r"(\d+)", full_truck).group())
+        max_col = col_letter_to_index("AN")
+        last_friday_col_idx = col_letter_to_index(last_friday_col)
+        range_end = last_friday_col_idx + full_truck_num
+
+        if last_friday_col_idx < max_col < range_end:
+            formula = '"Not enough predicted values - check inputs"'
+        elif last_friday_col_idx >= max_col:
+            formula = '"No prediction yet"'
         else:
-            last_friday_num = excel_col_to_num(last_friday_col)
-            range_end = last_friday_num + full_truck_val
-            if last_friday_num < max_col_limit < range_end:
-                formula = '"Not enough predicted values - check inputs"'
-            elif last_friday_num >= max_col_limit:
-                formula = '"No prediction yet"'
-            else:
-                formula = (
-                    f'=IF({best_model}="12 WK MA", {val_12wk},'
-                    f' IF({best_model}="8 WK MA", {val_8wk},'
-                    f'  IF({best_model}="4 WK MA", {val_4wk},'
-                    f'   AVERAGE('
-                    f'    INDEX(\'[Model_Suggestion.xlsx]Overall Suggestion\'!$A:$AN,'
-                    f'     MATCH({item_code}, \'[Model_Suggestion.xlsx]Overall Suggestion\'!$A:$A, 0),'
-                    f'     MATCH({last_friday}, \'[Model_Suggestion.xlsx]Overall Suggestion\'!$1:$1, 0) + 1'
-                    f'    ):' 
-                    f'    INDEX(\'[Model_Suggestion.xlsx]Overall Suggestion\'!$A:$AN,'
-                    f'     MATCH({item_code}, \'[Model_Suggestion.xlsx]Overall Suggestion\'!$A:$A, 0),'
-                    f'     MATCH({last_friday}, \'[Model_Suggestion.xlsx]Overall Suggestion\'!$1:$1, 0) + {full_truck_val}'
-                    f'    )'
-                    f'   )'
-                    f'  )'
-                    f' )'
-                    f')'
-                )
+            formula = (
+                f'=IF({best_model}="12 WK MA", {val_12wk},'
+                f' IF({best_model}="8 WK MA", {val_8wk},'
+                f'  IF({best_model}="4 WK MA", {val_4wk},'
+                f'   AVERAGE('
+                f'    INDEX(\'[Model_Suggestion.xlsx]Overall Suggestion\'!$A:$AN,'
+                f'     MATCH({item_code}, \'[Model_Suggestion.xlsx]Overall Suggestion\'!$A:$A, 0),'
+                f'     MATCH({last_friday}, \'[Model_Suggestion.xlsx]Overall Suggestion\'!$1:$1, 0) + 1'
+                f'    ):' 
+                f'    INDEX(\'[Model_Suggestion.xlsx]Overall Suggestion\'!$A:$AN,'
+                f'     MATCH({item_code}, \'[Model_Suggestion.xlsx]Overall Suggestion\'!$A:$A, 0),'
+                f'     MATCH({last_friday}, \'[Model_Suggestion.xlsx]Overall Suggestion\'!$1:$1, 0) + {full_truck_num}'
+                f'    )'
+                f'   )'
+                f'  )'
+                f' )'
+                f')'
+            )
     st.text_area("Excel formula (copy-paste):", formula, height=180)
+
 
 
 
