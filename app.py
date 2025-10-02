@@ -30,13 +30,12 @@ def get_col(cell_ref):
     m = re.match(r"\$?([A-Za-z]+)", cell_ref)
     return m.group(1) if m else None
 
-if st.button("Generate Formula"):
+def generate_formula():
     bm_value_lower = best_model.strip().lower()
     ma_models = ["12 wk ma", "8 wk ma", "4 wk ma"]
 
     if not any(model == bm_value_lower for model in ma_models) and ("promo" not in bm_value_lower):
-        # Output the cell reference itself as formula
-        formula = f'={best_model}'
+        return f'={best_model}'
     else:
         last_friday_col = get_col(last_friday)
         full_truck_num = int(re.search(r"(\d+)", full_truck).group())
@@ -45,11 +44,11 @@ if st.button("Generate Formula"):
         range_end = last_friday_col_idx + full_truck_num
 
         if last_friday_col_idx < max_col < range_end:
-            formula = '"Not enough predicted values - check inputs"'
+            return '"Not enough predicted values - check inputs"'
         elif last_friday_col_idx >= max_col:
-            formula = '"No prediction yet"'
+            return '"No prediction yet"'
         else:
-            formula = (
+            return (
                 f'=IF({best_model}="12 WK MA", {val_12wk},'
                 f' IF({best_model}="8 WK MA", {val_8wk},'
                 f'  IF({best_model}="4 WK MA", {val_4wk},'
@@ -67,7 +66,15 @@ if st.button("Generate Formula"):
                 f' )'
                 f')'
             )
-    st.text_area("Excel formula (copy-paste):", formula, height=180)
+
+if "formula" not in st.session_state:
+    st.session_state.formula = ""
+
+if st.button("Generate Formula"):
+    st.session_state.formula = generate_formula()
+
+# Display the formula always
+st.text_area("Excel formula (copy-paste):", st.session_state.formula, height=180)
 
 
 
