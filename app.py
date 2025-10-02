@@ -21,57 +21,40 @@ with colRight:
     full_truck = st.text_input("# Weeks Full Truck Cell (with $)", value="", placeholder="e.g. AT$22")
 
 def excel_col_to_num(col_str: str) -> int:
-    # Converts Excel column (e.g., A, AB, AN) to number (A=1)
     num = 0
     for c in col_str:
         if c.isalpha():
             num = num * 26 + (ord(c.upper()) - ord('A')) + 1
     return num
 
-def check_expansion(base_col_str, offset_str):
-    # base_col_str like 'AR' or 'AX', offset_str like '22' or '14'
-    base_num = excel_col_to_num(base_col_str)
-    try:
-        offset_num = int(offset_str)
-    except:
-        return None, "Invalid offset number"
-    end_num = base_num + offset_num
-    return end_num, None
-
 def get_col_and_row(cell_ref):
-    # Extracts col and row parts from an Excel cell reference
     m = re.match(r"(\$?)([A-Za-z]+)(\$?)(\d+)", cell_ref)
     if not m:
         return None, None
     return m.group(2).replace('$',''), m.group(4)
 
-# Extract column part only (ignore row and $)
 last_friday_col, _ = get_col_and_row(last_friday)
-full_truck_val = None
+full_truck_col, full_truck_row = get_col_and_row(full_truck)
+max_col_limit = excel_col_to_num("AN")
+
 try:
-    # full_truck is like AT$22, we want the 22 part as offset number
-    _, full_truck_row = get_col_and_row(full_truck)
     full_truck_val = int(full_truck_row)
 except:
     full_truck_val = None
 
-# Maximum allowed column number for 'AN' is excel_col_to_num('AN')=40
-max_col_limit = 40
-
 generate_col1, generate_col2, generate_col3 = st.columns([1,1,1])
 if generate_col2.button("Generate Formula"):
-    # Validate formula behavior conditions
-    # If best_model string does not contain "WK MA" or "promo" (case insensitive), output best_model value
     check_best_model = best_model.strip().lower()
     if ("wk ma" not in check_best_model) and ("promo" not in check_best_model):
-        formula = f'={best_model}'
+        # Output INDIRECT formula to fetch dynamic value at best_model cell
+        formula = f'=INDIRECT("{best_model}")'
     else:
         if last_friday_col is None or full_truck_val is None:
-            formula = "Error: Invalid cell references for date or weeks full truck"
+            formula = '"Error: Invalid cell references for last friday or weeks full truck"'
         else:
             last_friday_num = excel_col_to_num(last_friday_col)
             range_end = last_friday_num + full_truck_val
-            if range_end > max_col_limit and last_friday_num < max_col_limit:
+            if last_friday_num < max_col_limit < range_end:
                 formula = '"Not enough predicted values - check inputs"'
             elif last_friday_num >= max_col_limit:
                 formula = '"No prediction yet"'
