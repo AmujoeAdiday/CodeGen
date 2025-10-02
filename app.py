@@ -1,5 +1,4 @@
 import streamlit as st
-from st_copy_to_clipboard import st_copy_to_clipboard
 
 st.title("Excel Formula Replacer Tool")
 
@@ -19,10 +18,8 @@ with colRight:
     full_truck = st.text_input("# Weeks Full Truck Cell (with $)", value="", placeholder="e.g. AT$22")
 
 generate_col1, generate_col2, generate_col3 = st.columns([1,1,1])
-generate_button = generate_col2.button("Generate Formula")
-
-if generate_button:
-    formula = (
+if generate_col2.button("Generate Formula"):
+    st.session_state['formula'] = (
         f'=IF({best_model}="12 WK MA", {val_12wk},'
         f' IF({best_model}="8 WK MA", {val_8wk},'
         f'  IF({best_model}="4 WK MA", {val_4wk},'
@@ -40,8 +37,25 @@ if generate_button:
         f' )'
         f')'
     )
-    st.text_area("Excel formula (copy-paste):", formula, height=180)
-    st_copy_to_clipboard(formula, tooltip="Copy to clipboard", copied_label="Copied!")
+    st.session_state['copied'] = False
+
+if 'formula' in st.session_state:
+    st.text_area("Excel formula (copy-paste):", st.session_state['formula'], height=180, key='formula_area')
+    
+    if st.session_state.get('copied', False):
+        st.success("Copied!")
+    else:
+        if st.button("Copy Formula to Clipboard"):
+            # Use JS to copy to clipboard (wrapped in markdown)
+            st.session_state['copied'] = True
+            st.markdown(
+                f"""
+                <script>
+                navigator.clipboard.writeText(`{st.session_state['formula']}`);
+                </script>
+                """,
+                unsafe_allow_html=True,
+            )
 
 
 
