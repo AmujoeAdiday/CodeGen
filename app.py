@@ -1,5 +1,4 @@
-
-# ver 3
+#ver 4
 import streamlit as st
 import re
 
@@ -34,46 +33,125 @@ def generate_formula():
     bm_value_lower = best_model.strip().lower()
     ma_models = ["12 wk ma", "8 wk ma", "4 wk ma"]
 
+    # If best_model does not match the 3 MA models and does not contain "promo"
     if not any(model == bm_value_lower for model in ma_models) and ("promo" not in bm_value_lower):
-        return f'={best_model}'
+        # In this case, the output formula should have best_model as fallback condition like below
+        fallback_formula = f'{best_model}'
     else:
-        last_friday_col = get_col(last_friday)
-        full_truck_num = int(re.search(r"(\d+)", full_truck).group())
-        max_col = col_letter_to_index("AN")
-        last_friday_col_idx = col_letter_to_index(last_friday_col)
-        range_end = last_friday_col_idx + full_truck_num
+        fallback_formula = (
+            f'AVERAGE('
+            f'    INDEX(\'[Model_Suggestion.xlsx]Overall Suggestion\'!$A:$AN,'
+            f'     MATCH({item_code}, \'[Model_Suggestion.xlsx]Overall Suggestion\'!$A:$A, 0),'
+            f'     MATCH({last_friday}, \'[Model_Suggestion.xlsx]Overall Suggestion\'!$1:$1, 0) + 1'
+            f'    ):' 
+            f'    INDEX(\'[Model_Suggestion.xlsx]Overall Suggestion\'!$A:$AN,'
+            f'     MATCH({item_code}, \'[Model_Suggestion.xlsx]Overall Suggestion\'!$A:$A, 0),'
+            f'     MATCH({last_friday}, \'[Model_Suggestion.xlsx]Overall Suggestion\'!$1:$1, 0) + {full_truck_num}'
+            f'    )'
+            f'   )'
+        )
 
-        if last_friday_col_idx < max_col < range_end:
-            return '"Not enough predicted values - check inputs"'
-        elif last_friday_col_idx >= max_col:
-            return '"No prediction yet"'
-        else:
-            return (
-                f'=IF({best_model}="12 WK MA", {val_12wk},'
-                f' IF({best_model}="8 WK MA", {val_8wk},'
-                f'  IF({best_model}="4 WK MA", {val_4wk},'
-                f'   AVERAGE('
-                f'    INDEX(\'[Model_Suggestion.xlsx]Overall Suggestion\'!$A:$AN,'
-                f'     MATCH({item_code}, \'[Model_Suggestion.xlsx]Overall Suggestion\'!$A:$A, 0),'
-                f'     MATCH({last_friday}, \'[Model_Suggestion.xlsx]Overall Suggestion\'!$1:$1, 0) + 1'
-                f'    ):' 
-                f'    INDEX(\'[Model_Suggestion.xlsx]Overall Suggestion\'!$A:$AN,'
-                f'     MATCH({item_code}, \'[Model_Suggestion.xlsx]Overall Suggestion\'!$A:$A, 0),'
-                f'     MATCH({last_friday}, \'[Model_Suggestion.xlsx]Overall Suggestion\'!$1:$1, 0) + {full_truck_num}'
-                f'    )'
-                f'   )'
-                f'  )'
-                f' )'
-                f')'
-            )
+    return (
+        f'=IF({best_model}="12 WK MA", {val_12wk},'
+        f' IF({best_model}="8 WK MA", {val_8wk},'
+        f'  IF({best_model}="4 WK MA", {val_4wk},'
+        f'   {fallback_formula}'
+        f'  )'
+        f' )'
+        f')'
+    )
 
 if "formula" not in st.session_state:
     st.session_state.formula = ""
 
 if st.button("Generate Formula"):
+    try:
+        full_truck_num = int(re.search(r"(\d+)", full_truck).group())
+    except Exception:
+        full_truck_num = 0
+    
     st.session_state.formula = generate_formula()
 
 st.text_area("Excel formula (copy-paste):", st.session_state.formula, height=180)
+
+
+
+
+# ver 3
+# import streamlit as st
+# import re
+
+# st.title("Excel Formula Replacer Tool")
+
+# colLeft, colCenter, colRight = st.columns([1,1,1])
+
+# with colLeft:
+#     val_12wk = st.text_input("Value of 12 WK MA Cell", placeholder="e.g. AN26")
+#     val_8wk = st.text_input("Value of 8 WK MA Cell", placeholder="e.g. AO26")
+#     val_4wk = st.text_input("Value of 4 WK MA Cell", placeholder="e.g. AP26")
+
+# with colCenter:
+#     best_model = st.text_input("Best Model Indicator Cell", placeholder="e.g. AR26")
+#     item_code = st.text_input("Item Code Cell", placeholder="e.g. E26")
+
+# with colRight:
+#     last_friday = st.text_input("Updated Last Friday Cell (with $)", placeholder="e.g. AX$24")
+#     full_truck = st.text_input("# Weeks Full Truck Cell (with $)", placeholder="e.g. AT$22")
+
+# def col_letter_to_index(col):
+#     num = 0
+#     for c in col.upper():
+#         num = num*26 + (ord(c) - ord('A') + 1)
+#     return num
+
+# def get_col(cell):
+#     m = re.match(r"\$?([A-Za-z]+)", cell)
+#     return m.group(1) if m else None
+
+# def generate_formula():
+#     bm_value_lower = best_model.strip().lower()
+#     ma_models = ["12 wk ma", "8 wk ma", "4 wk ma"]
+
+#     if not any(model == bm_value_lower for model in ma_models) and ("promo" not in bm_value_lower):
+#         return f'={best_model}'
+#     else:
+#         last_friday_col = get_col(last_friday)
+#         full_truck_num = int(re.search(r"(\d+)", full_truck).group())
+#         max_col = col_letter_to_index("AN")
+#         last_friday_col_idx = col_letter_to_index(last_friday_col)
+#         range_end = last_friday_col_idx + full_truck_num
+
+#         if last_friday_col_idx < max_col < range_end:
+#             return '"Not enough predicted values - check inputs"'
+#         elif last_friday_col_idx >= max_col:
+#             return '"No prediction yet"'
+#         else:
+#             return (
+#                 f'=IF({best_model}="12 WK MA", {val_12wk},'
+#                 f' IF({best_model}="8 WK MA", {val_8wk},'
+#                 f'  IF({best_model}="4 WK MA", {val_4wk},'
+#                 f'   AVERAGE('
+#                 f'    INDEX(\'[Model_Suggestion.xlsx]Overall Suggestion\'!$A:$AN,'
+#                 f'     MATCH({item_code}, \'[Model_Suggestion.xlsx]Overall Suggestion\'!$A:$A, 0),'
+#                 f'     MATCH({last_friday}, \'[Model_Suggestion.xlsx]Overall Suggestion\'!$1:$1, 0) + 1'
+#                 f'    ):' 
+#                 f'    INDEX(\'[Model_Suggestion.xlsx]Overall Suggestion\'!$A:$AN,'
+#                 f'     MATCH({item_code}, \'[Model_Suggestion.xlsx]Overall Suggestion\'!$A:$A, 0),'
+#                 f'     MATCH({last_friday}, \'[Model_Suggestion.xlsx]Overall Suggestion\'!$1:$1, 0) + {full_truck_num}'
+#                 f'    )'
+#                 f'   )'
+#                 f'  )'
+#                 f' )'
+#                 f')'
+#             )
+
+# if "formula" not in st.session_state:
+#     st.session_state.formula = ""
+
+# if st.button("Generate Formula"):
+#     st.session_state.formula = generate_formula()
+
+# st.text_area("Excel formula (copy-paste):", st.session_state.formula, height=180)
 
 
 
