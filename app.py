@@ -8,17 +8,17 @@ st.title("Excel Formula Replacer Tool")
 colLeft, colCenter, colRight = st.columns([1,1,1])
 
 with colLeft:
-    val_12wk = st.text_input("Value of 12 WK MA Cell", value="", placeholder="e.g. AN26")
-    val_8wk = st.text_input("Value of 8 WK MA Cell", value="", placeholder="e.g. AO26")
-    val_4wk = st.text_input("Value of 4 WK MA Cell", value="", placeholder="e.g. AP26")
+    val_12wk = st.text_input("Value of 12 WK MA Cell", placeholder="e.g. AN26")
+    val_8wk = st.text_input("Value of 8 WK MA Cell", placeholder="e.g. AO26")
+    val_4wk = st.text_input("Value of 4 WK MA Cell", placeholder="e.g. AP26")
 
 with colCenter:
-    best_model = st.text_input("Best Model Indicator Cell", value="", placeholder="e.g. AR26")
-    item_code = st.text_input("Item Code Cell", value="", placeholder="e.g. E26")
+    best_model = st.text_input("Best Model Indicator Cell", placeholder="e.g. AR26")
+    item_code = st.text_input("Item Code Cell", placeholder="e.g. E26")
 
 with colRight:
-    last_friday = st.text_input("Updated Last Friday Cell (with $)", value="", placeholder="e.g. AX$24")
-    full_truck = st.text_input("# Weeks Full Truck Cell (with $)", value="", placeholder="e.g. AT$22")
+    last_friday = st.text_input("Updated Last Friday Cell (with $)", placeholder="e.g. AX$24")
+    full_truck = st.text_input("# Weeks Full Truck Cell (with $)", placeholder="e.g. AT$22")
 
 def col_letter_to_index(col):
     num = 0
@@ -26,8 +26,8 @@ def col_letter_to_index(col):
         num = num*26 + (ord(c) - ord('A') + 1)
     return num
 
-def get_col(cell_ref):
-    m = re.match(r"\$?([A-Za-z]+)", cell_ref)
+def get_col(cell):
+    m = re.match(r"\$?([A-Za-z]+)", cell)
     return m.group(1) if m else None
 
 def generate_formula():
@@ -73,8 +73,8 @@ if "formula" not in st.session_state:
 if st.button("Generate Formula"):
     st.session_state.formula = generate_formula()
 
-# Display the formula always
 st.text_area("Excel formula (copy-paste):", st.session_state.formula, height=180)
+
 
 
 
