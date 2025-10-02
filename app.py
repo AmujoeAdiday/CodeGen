@@ -1,4 +1,5 @@
 import streamlit as st
+from st_copy_to_clipboard import st_copy_to_clipboard
 
 st.title("Excel Formula Replacer Tool")
 
@@ -14,14 +15,9 @@ with colCenter:
     item_code = st.text_input("Item Code Cell", value="", placeholder="e.g. E26")
 
 with colRight:
-    last_friday = st.text_input(
-        "Updated Last Friday Cell (with $)", value="", placeholder="e.g. AX$24"
-    )
-    full_truck = st.text_input(
-        "# Weeks Full Truck Cell (with $)", value="", placeholder="e.g. AT$22"
-    )
+    last_friday = st.text_input("Updated Last Friday Cell (with $)", value="", placeholder="e.g. AX$24")
+    full_truck = st.text_input("# Weeks Full Truck Cell (with $)", value="", placeholder="e.g. AT$22")
 
-# Centered Generate button in its own container
 generate_col1, generate_col2, generate_col3 = st.columns([1,1,1])
 generate_button = generate_col2.button("Generate Formula")
 
@@ -44,11 +40,9 @@ if generate_button:
         f' )'
         f')'
     )
-    # Output with copy to clipboard button
     st.text_area("Excel formula (copy-paste):", formula, height=180)
-    if st.button("Copy Formula to Clipboard"):
-        st.experimental_set_query_params(formula=formula)
-        st.write("Formula copied! Paste it in Excel.")
+    st_copy_to_clipboard(formula, tooltip="Copy to clipboard", copied_label="Copied!")
+
 
 
 # -- verson 2
