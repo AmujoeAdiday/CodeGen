@@ -1,5 +1,6 @@
 
 #-- verson 2 on drive C
+
 import streamlit as st
 
 st.title("Excel Formula Replacer Tool")
@@ -39,7 +40,6 @@ if st.button("Generate Formula"):
         f')'
     )
     st.text_area("Excel formula (copy-paste):", formula, height=180)
-
 
 
 # -- verson 5
