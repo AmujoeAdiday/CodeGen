@@ -7,7 +7,7 @@ st.title("Excel Formula Replacer Tool")
 
 # Load the Excel file from drive C
 # excel_path = r"C:/Data/Model_Suggestion.xlsx"
-excel_path = r"C:\Data\Model_Suggestion.xlsx"
+excel_path = r"C:\ML_Model\Model_Suggestion.xlsx"
 
 try:
     xl_data = pd.read_excel(excel_path, sheet_name="Overall Suggestion")
