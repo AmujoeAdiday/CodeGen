@@ -1,7 +1,8 @@
 import streamlit as st
 
-st.title("Google Sheets Formula Replacer Tool")
+st.title("Google Sheets Dynamic Formula Generator")
 
+# --- Input columns ---
 colLeft, colCenter, colRight = st.columns([1,1,1])
 
 with colLeft:
@@ -17,30 +18,42 @@ with colRight:
     last_friday = st.text_input("Updated Last Friday Cell (with $)", value="", placeholder="e.g. AX$24")
     full_truck = st.text_input("# Weeks Full Truck Cell (with $)", value="", placeholder="e.g. AT$22")
 
-# Fixed Google Sheet ID from your link
+st.markdown("---")
+
+# --- Google Sheet Info (hardcoded for provided URL and tab) ---
 google_sheet_id = "1XWbGYkrsNEf1_t0HId45S2Y8x4jLY4Hz"
 sheet_tab = "Overall Suggestion"
 
 if st.button("Generate Formula"):
+    # Google Sheets formula using IMPORTRANGE (all parentheses carefully balanced)
     formula = (
-        f'=IF({best_model}="12 WK MA", {val_12wk}, '
-        f'IF({best_model}="8 WK MA", {val_8wk}, '
-        f'IF({best_model}="4 WK MA", {val_4wk}, '
-        f'AVERAGE('
-        f'INDEX('
-        f'IMPORTRANGE("https://docs.google.com/spreadsheets/d/{google_sheet_id}", "{sheet_tab}!A:AN"), '
-        f'MATCH({item_code}, IMPORTRANGE("https://docs.google.com/spreadsheets/d/{google_sheet_id}", "{sheet_tab}!A:A"), 0), '
-        f'MATCH({last_friday}, IMPORTRANGE("https://docs.google.com/spreadsheets/d/{google_sheet_id}", "{sheet_tab}!1:1"), 0) + 1) : '
-        f'INDEX('
-        f'IMPORTRANGE("https://docs.google.com/spreadsheets/d/{google_sheet_id}", "{sheet_tab}!A:AN"), '
-        f'MATCH({item_code}, IMPORTRANGE("https://docs.google.com/spreadsheets/d/{google_sheet_id}", "{sheet_tab}!A:A"), 0), '
-        f'MATCH({last_friday}, IMPORTRANGE("https://docs.google.com/spreadsheets/d/{google_sheet_id}", "{sheet_tab}!1:1"), 0) + {full_truck}'
-        f')'
-        f')'
-        f')'
-        f')'
+        f'=IF({best_model}="12 WK MA",{val_12wk},'
+        f'IF({best_model}="8 WK MA",{val_8wk},'
+        f'IF({best_model}="4 WK MA",{val_4wk},'
+        'AVERAGE('
+            f'INDEX(IMPORTRANGE("https://docs.google.com/spreadsheets/d/{google_sheet_id}","{sheet_tab}!A:AN"),'
+                f'MATCH({item_code},IMPORTRANGE("https://docs.google.com/spreadsheets/d/{google_sheet_id}","{sheet_tab}!A:A"),0),'
+                f'MATCH({last_friday},IMPORTRANGE("https://docs.google.com/spreadsheets/d/{google_sheet_id}","{sheet_tab}!1:1"),0)+1)'
+            ':'
+            f'INDEX(IMPORTRANGE("https://docs.google.com/spreadsheets/d/{google_sheet_id}","{sheet_tab}!A:AN"),'
+                f'MATCH({item_code},IMPORTRANGE("https://docs.google.com/spreadsheets/d/{google_sheet_id}","{sheet_tab}!A:A"),0),'
+                f'MATCH({last_friday},IMPORTRANGE("https://docs.google.com/spreadsheets/d/{google_sheet_id}","{sheet_tab}!1:1"),0)+{full_truck})'
+        ')'
+        ')))'
     )
-    st.text_area("Google Sheets formula (copy-paste):", formula, height=220)
+    
+    st.text_area("Google Sheets formula (copy-paste):", formula, height=200)
+    st.markdown(f"""
+- **Sheet ID:** `{google_sheet_id}`
+- **Tab name:** `{sheet_tab}`
+- Example of reference: `IMPORTRANGE("https://docs.google.com/spreadsheets/d/{google_sheet_id}","{sheet_tab}!A:AN")`
+    """)
+
+st.info(
+    "Paste this formula into a Google Sheets cell. The first time you use IMPORTRANGE, Sheets will prompt you to grant access. "
+    "All formula segments use properly balanced parentheses for error-free pasting."
+)
+
 
 
 
